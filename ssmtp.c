@@ -1293,8 +1293,12 @@ fd_getc() -- Read a character from an fd
 ssize_t fd_getc(int fd, void *c)
 {
 #ifdef HAVE_SSL
-	if(use_tls == True) { 
-		return(SSL_read(ssl, c, 1));
+	if(use_tls == True) {
+		int attempt = 3;
+		int ret = 0;
+		while (attempt-- > 0 && ret == 0)
+			ret = SSL_read(ssl, c, 1);
+		return ret;
 	}
 #endif
 	return(read(fd, c, 1));
