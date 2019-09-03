@@ -705,9 +705,6 @@ void header_save(char *str)
 		if(override_from == True) {
 			uad = from_strip(ht->string);
 		}
-		else {
-			return;
-		}
 #endif
 		have_from = True;
 	}
