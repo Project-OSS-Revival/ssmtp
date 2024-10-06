@@ -55,21 +55,21 @@ bool_t use_oldauth = False;		/* use old AUTH LOGIN username style */
 
 #define ARPADATE_LENGTH 32		/* Current date in RFC format */
 char arpadate[ARPADATE_LENGTH];
-char *auth_user = (char)NULL;
-char *auth_pass = (char)NULL;
-char *auth_method = (char)NULL;		/* Mechanism for SMTP authentication */
-char *mail_domain = (char)NULL;
-char *from = (char)NULL;		/* Use this as the From: address */
+char *auth_user = NULL;
+char *auth_pass = NULL;
+char *auth_method = NULL;		/* Mechanism for SMTP authentication */
+char *mail_domain = NULL;
+char *from = NULL;		/* Use this as the From: address */
 char *hostname;
 char *mailhost = "mailhub";
-char *minus_f = (char)NULL;
-char *minus_F = (char)NULL;
+char *minus_f = NULL;
+char *minus_F = NULL;
 char *gecos;
-char *prog = (char)NULL;
+char *prog = NULL;
 char *root = NULL;
 char *tls_cert = "/etc/ssl/certs/ssmtp.pem";	/* Default Certificate */
-char *uad = (char)NULL;
-char *config_file = (char)NULL;		/* alternate configuration file */
+char *uad = NULL;
+char *config_file = NULL;		/* alternate configuration file */
 
 headers_t headers, *ht;
 
@@ -275,7 +275,7 @@ char *strip_post_ws(char *str)
 
 	p = (str + strlen(str));
 	while(isspace(*--p)) {
-		*p = (char)NULL;
+		*p = 0;
 	}
 
 	return(p);
@@ -301,7 +301,7 @@ char *addr_parse(char *str)
 		q++;
 
 		if((p = strchr(q, '>'))) {
-			*p = (char)NULL;
+			*p = 0;
 		}
 
 #if 0
@@ -324,7 +324,7 @@ char *addr_parse(char *str)
 	q = strip_post_ws(p);
 	if(*q == ')') {
 		while((*--q != '('));
-		*q = (char)NULL;
+		*q = 0;
 	}
 	(void)strip_post_ws(p);
 
@@ -377,13 +377,13 @@ bool_t standardise(char *str, bool_t *linestart)
 	*linestart = False;
 
 	if((p = strchr(str, '\n'))) {
-		*p = (char)NULL;
+		*p = 0;
 		*linestart = True;
 
 		/* If the line ended in "\r\n", then drop the '\r' too */
 		sl = strlen(str);
 		if(sl >= 1 && str[sl - 1] == '\r') {
-			str[sl - 1] = (char)NULL;
+			str[sl - 1] = 0;
 		}
 	}
 	return(leadingdot);
@@ -404,7 +404,7 @@ void revaliases(struct passwd *pw)
 		while(fgets(buf, sizeof(buf), fp)) {
 			/* Make comments invisible */
 			if((p = strchr(buf, '#'))) {
-				*p = (char)NULL;
+				*p = 0;
 			}
 
 			/* Ignore malformed lines and comments */
@@ -539,7 +539,7 @@ void rcpt_save(char *str)
 #endif
 
 	/* Ignore missing usernames */
-	if(*str == (char)NULL) {
+	if(*str == NULL) {
 		return;
 	}
 
@@ -596,7 +596,7 @@ void rcpt_parse(char *str)
 		}
 
 		/* End of string? */
-		if(*(q + 1) == (char)NULL) {
+		if(*(q + 1) == NULL) {
 			got_addr = True;
 		}
 
@@ -604,7 +604,7 @@ void rcpt_parse(char *str)
 		if((*q == ',') && (in_quotes == False)) {
 			got_addr = True;
 
-			*q = (char)NULL;
+			*q = 0;
 		}
 
 		if(got_addr) {
@@ -696,7 +696,7 @@ void header_save(char *str)
 	if(strncasecmp(ht->string, "From:", 5) == 0) {
 #if 1
 		/* Hack check for NULL From: line */
-		if(*(p + 6) == (char)NULL) {
+		if(*(p + 6) == NULL) {
 			return;
 		}
 #endif
@@ -758,7 +758,7 @@ void header_parse(FILE *stream)
 	size_t size = BUF_SZ, len = 0;
 	char *p = (char *)NULL, *q;
 	bool_t in_header = True;
-	char l = (char)NULL;
+	char l = 0;
 	int c;
 
 	while(in_header && ((c = fgetc(stream)) != EOF)) {
@@ -801,9 +801,9 @@ void header_parse(FILE *stream)
 						in_header = False;
 
 				default:
-						*q = (char)NULL;
+						*q = 0;
 						if((q = strrchr(p, '\n'))) {
-							*q = (char)NULL;
+							*q = 0;
 						}
 						if(len > 0) {
 							header_save(p);
@@ -820,7 +820,7 @@ void header_parse(FILE *stream)
 	if(in_header && l == '\n') {
 		/* Got EOF while reading the header */
 		if((q = strrchr(p, '\n'))) {
-			*q = (char)NULL;
+			*q = 0;
 		}
 		header_save(p);
 	}
@@ -880,7 +880,7 @@ bool_t read_config()
 		char *rightside;
 		/* Make comments invisible */
 		if((p = strchr(buf, '#'))) {
-			*p = (char)NULL;
+			*p = 0;
 		}
 
 		/* Ignore malformed lines and comments */
@@ -1318,7 +1318,7 @@ char *fd_gets(char *buf, int size, int fd)
 			buf[i++] = c;
 		}
 	}
-	buf[i] = (char)NULL;
+	buf[i] = 0;
 
 	return(buf);
 }
@@ -1750,7 +1750,7 @@ char **parse_options(int argc, char *argv[])
 		j = 0;
 
 		add = 1;
-		while(argv[i][++j] != (char)NULL) {
+		while(argv[i][++j] != 0) {
 			switch(argv[i][j]) {
 #ifdef INET6
 			case '6':
