@@ -1839,6 +1839,16 @@ char **parse_options(int argc, char *argv[])
 						paq("-bz is meaningless to sSMTP\n");
 				}
 
+			/* Body type*/
+			case 'B':
+				if(!argv[i][j+1]) {
+					add++;
+					goto exit;
+				}
+				else {
+					continue;
+				}
+
 			/* Configfile name */
 			case 'C':
 				if((!argv[i][(j + 1)]) && argv[(i + 1)]) {
