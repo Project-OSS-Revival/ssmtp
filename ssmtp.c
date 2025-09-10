@@ -539,7 +539,7 @@ void rcpt_save(char *str)
 #endif
 
 	/* Ignore missing usernames */
-	if(*str == NULL) {
+	if(*str == 0) {
 		return;
 	}
 
@@ -596,7 +596,7 @@ void rcpt_parse(char *str)
 		}
 
 		/* End of string? */
-		if(*(q + 1) == NULL) {
+		if(*(q + 1) == 0) {
 			got_addr = True;
 		}
 
@@ -630,30 +630,30 @@ int crammd5(char *challengeb64, char *username, char *password, char *responseb6
 	unsigned char digascii[MD5_DIGEST_LEN * 2];
 	unsigned char challenge[(BUF_SZ + 1)];
 	unsigned char response[(BUF_SZ + 1)];
-	unsigned char secret[(MD5_BLOCK_LEN + 1)]; 
+	unsigned char secret[(MD5_BLOCK_LEN + 1)];
 
 	memset (secret,0,sizeof(secret));
 	memset (challenge,0,sizeof(challenge));
-	strncpy (secret, password, sizeof(secret));	
+	strncpy ((char *)secret, password, sizeof(secret) - 1);
 	if (!challengeb64 || strlen(challengeb64) > sizeof(challenge) * 3 / 4)
 		return 0;
-	from64tobits(challenge, challengeb64);
+	from64tobits((char *)challenge, challengeb64);
 
-	hmac_md5(challenge, strlen(challenge), secret, strlen(secret), digest);
+	hmac_md5(challenge, strlen((char *)challenge), secret, strlen((char *)secret), digest);
 
 	for (i = 0; i < MD5_DIGEST_LEN; i++) {
 		digascii[2 * i] = hextab[digest[i] >> 4];
 		digascii[2 * i + 1] = hextab[(digest[i] & 0x0F)];
 	}
-	digascii[MD5_DIGEST_LEN * 2] = '\0';
+	digascii[MD5_DIGEST_LEN * 2 - 1] = '\0';
 
 	if (sizeof(response) <= strlen(username) + sizeof(digascii))
 		return 0;
 	
-	strncpy (response, username, sizeof(response) - sizeof(digascii) - 2);
-	strcat (response, " ");
-	strcat (response, digascii);
-	to64frombits(responseb64, response, strlen(response));
+	strncpy ((char *)response, username, sizeof(response) - sizeof(digascii) - 2);
+	strcat ((char *)response, " ");
+	strcat ((char *)response, (char *)digascii);
+	to64frombits((unsigned char *)responseb64, response, strlen((char *)response));
 
 	return 1;
 }
@@ -696,7 +696,7 @@ void header_save(char *str)
 	if(strncasecmp(ht->string, "From:", 5) == 0) {
 #if 1
 		/* Hack check for NULL From: line */
-		if(*(p + 6) == NULL) {
+		if(*(p + 6) == 0) {
 			return;
 		}
 #endif
@@ -1111,11 +1111,11 @@ int smtp_open(char *host, int port)
 #ifdef INET6
 	struct addrinfo hints, *ai0, *ai;
 	char servname[NI_MAXSERV];
-	int s;
+	int s = 0;
 #else
 	struct sockaddr_in name;
 	struct hostent *hent;
-	int i, s, namelen;
+	int i, s = 0, namelen;
 #endif
 
 #ifdef HAVE_SSL
@@ -1125,7 +1125,7 @@ int smtp_open(char *host, int port)
 	/* Init SSL stuff */
 	SSL_CTX *ctx;
 	SSL_METHOD *meth;
-	X509 *server_cert;
+	const X509 *server_cert;
 
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
@@ -1466,7 +1466,7 @@ int ssmtp(char *argv[])
 	from = from_format(uad, override_from);
 
 	/* Now to the delivery of the message */
-	(void)signal(SIGALRM, (void(*)())handler);	/* Catch SIGALRM */
+	(void)signal(SIGALRM, (sighandler_t)handler);	/* Catch SIGALRM */
 	(void)alarm((unsigned) MAXWAIT);			/* Set initial timer */
 	if(setjmp(TimeoutJmpBuf) != 0) {
 		/* Then the timer has gone off and we bail out */
@@ -1509,7 +1509,7 @@ int ssmtp(char *argv[])
 			if(smtp_read(sock, buf) != 3) {
 				die("Server rejected AUTH CRAM-MD5 (%s)", buf);
 			}
-			strncpy(challenge, strchr(buf,' ') + 1, sizeof(challenge));
+			strncpy(challenge, strchr(buf,' ') + 1, sizeof(challenge) - 1);
 
 			memset(buf, 0, bufsize);
 			crammd5(challenge, auth_user, auth_pass, buf);
@@ -1517,7 +1517,7 @@ int ssmtp(char *argv[])
 		else {
 #endif
 		memset(buf, 0, bufsize);
-		to64frombits(buf, auth_user, strlen(auth_user));
+		to64frombits((unsigned char *)buf, (unsigned char *)auth_user, strlen(auth_user));
 		if (use_oldauth) {
 			outbytes += smtp_write(sock, "AUTH LOGIN %s", buf);
 		}
@@ -1529,7 +1529,7 @@ int ssmtp(char *argv[])
 			}
 			/* we assume server asked us for Username */
 			memset(buf, 0, bufsize);
-			to64frombits(buf, auth_user, strlen(auth_user));
+			to64frombits((unsigned char *)buf, (unsigned char *)auth_user, strlen(auth_user));
 			outbytes += smtp_write(sock, buf);
 		}
 
@@ -1539,7 +1539,7 @@ int ssmtp(char *argv[])
 		}
 		memset(buf, 0, bufsize);
 
-		to64frombits(buf, auth_pass, strlen(auth_pass));
+		to64frombits((unsigned char *)buf, (unsigned char *)auth_pass, strlen(auth_pass));
 #ifdef MD5AUTH
 		}
 #endif
@@ -1621,7 +1621,7 @@ int ssmtp(char *argv[])
 		outbytes += smtp_write(sock, "From: %s", from);
 	}
 
-	if(remote_addr=getenv("REMOTE_ADDR")) {
+	if((remote_addr=getenv("REMOTE_ADDR"))) {
 		outbytes += smtp_write(sock, "X-Originating-IP: %s", remote_addr);
 	}
 
