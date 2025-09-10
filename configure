@@ -1562,7 +1562,7 @@ if test x$enableval = xyes ; then
 #define HAVE_SSL 1
 EOF
 
-	LIBS="$LIBS -lssl"
+	LIBS="$LIBS -lgnutls-openssl"
 fi
 enableval=""
 
