@@ -27,17 +27,17 @@ From: lines; and per-user From: addresses and mailhub names.
 .PP
 It does not attempt to provide all the functionality of sendmail: it is
 intended for use where other programs are the primary means of at last mail
-delivery.  It is usefull with pop/imap, or to simulate the Sun shared mail
+delivery.  It is useful with pop/imap, or to simulate the Sun shared mail
 spool option for non-Sun machines, for machines whose sendmails are too
 difficult (or various) to configure, for machines with known disfeatures in
 their sendmails or for ones where there are ``mysterious problems''. 
 .PP
 It does not do aliasing, which must be done either in the user agent
 or on the mailhub. Nor does it honor .forwards, which have to be done
-on the recieving host.  It especially does not deliver to pipelines.
+on the receiving host.  It especially does not deliver to pipelines.
 
 .SH OPTIONS
-Most sendmail options are irrelevent to sSMTP. Those marked ``ignored'' or
+Most sendmail options are irrelevant to sSMTP. Those marked ``ignored'' or
 ``default'' have no effect on mail transfer.  Those marked ``unsupported''
 are fatal errors.  Those marked ``simulated'' are not errors, but the result
 is for the program to exit with an informative message. A sort of fatal
@@ -123,7 +123,7 @@ Sets the name of the ``from'' person. This option is valid only if no
 From: line is specified within the header of the email.
 
 .TP
-\fB\-h\fP\fI\fN\fP
+\fB\-h\fP\fIN\fP
 (ignored) Set the hop count to N.
 
 .TP
@@ -151,7 +151,7 @@ From: line is specified within the header of the email.
 (ignored) Delay ``expensive'' connections.
 
 .TP
-\fB\-od\fP\fx\fP
+\fB\-od\fP\fIx\fP
 (ignored) Set the delivery mode to interactive/synchronous, background or queue
 (Always interactive).
 
@@ -160,7 +160,7 @@ From: line is specified within the header of the email.
 (ignored) Run newaliases if required.
 
 .TP
-\fB\-oe\fP\fx\fP
+\fB\-oe\fP\fIx\fP
 (ignored) Set error processing to mail, write, print or quit. (Always print).
 
 .TP
