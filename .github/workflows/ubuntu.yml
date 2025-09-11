@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install libgnutls-openssl-dev
+      run: sudo apt install -y libgnutls-openssl-dev
     - name: configure
       run: ./configure --enable-ssl --enable-inet6 --enable-md5auth
     - name: make
