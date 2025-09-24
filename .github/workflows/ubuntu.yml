@@ -1,0 +1,21 @@
+name: ubuntu
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install libssl-dev
+      run: sudo apt install -y libssl-dev
+    - name: configure
+      run: ./configure --enable-ssl --enable-inet6 --enable-md5auth
+    - name: make
+      run: make
