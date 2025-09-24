@@ -1,3 +1,13 @@
+2025-09-24  Syed Shahrukh Hussain <syed.shahrukh@ossrevival.org>
+
+  - Update to current autoconf.
+  - Fix discarded-qualifiers warning.
+  - Link libcrypto explicitly to build with gold linker.
+  - Fix groff warning.
+  - GCC 15 fix.
+  - Applied debian patches with attribution.
+
+
 2009-07-06  Anibal Monsalve Salazar <anibal@debian.org>
 
   - Merge 01_password-handling.patch from Ubuntu
