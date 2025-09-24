@@ -1124,8 +1124,8 @@ int smtp_open(char *host, int port)
 
 	/* Init SSL stuff */
 	SSL_CTX *ctx;
-	SSL_METHOD *meth;
-	const X509 *server_cert;
+	const SSL_METHOD *meth;
+	X509 *server_cert;
 
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
