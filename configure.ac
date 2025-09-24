@@ -1,5 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(ssmtp.c)
+AC_INIT
+AC_CONFIG_SRCDIR([ssmtp.c])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -9,13 +10,20 @@ AC_PROG_LN_S
 dnl Checks for libraries.
 
 dnl Checks for header files.
-AC_HEADER_STDC
+m4_warn([obsolete],
+[The preprocessor macro 'STDC_HEADERS' is obsolete.
+  Except in unusual embedded environments, you can safely include all
+  C89 headers unconditionally.])dnl
+# Autoupdate added the next two lines to ensure that your configure
+# script's behavior did not change.  They are probably safe to remove.
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS(limits.h strings.h syslog.h unistd.h)
 
 
 AC_CACHE_CHECK([for obsolete openlog],ssmtp_cv_obsolete_openlog,
-	[ AC_TRY_COMPILE([#include <syslog.h> ] , [ openlog("xx",1); ] , 
-	ssmtp_cv_obsolete_openlog=yes, ssmtp_cv_obsolete_openlog=no)]
+	[ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <syslog.h>  ]], [[ openlog("xx",1);  ]])],[ssmtp_cv_obsolete_openlog=yes],[ssmtp_cv_obsolete_openlog=no])]
 )
 
 
@@ -28,7 +36,19 @@ AC_SEARCH_LIBS(gethostname, nsl)
 AC_SEARCH_LIBS(socket, socket)
 
 dnl Checks for library functions.
-AC_TYPE_SIGNAL
+m4_warn([obsolete],
+[your code may safely assume C89 semantics that RETSIGTYPE is void.
+Remove this warning and the 'AC_CACHE_CHECK' when you adjust the code.])dnl
+AC_CACHE_CHECK([return type of signal handlers],[ac_cv_type_signal],[AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([#include <sys/types.h>
+#include <signal.h>
+],
+		 [return *(signal (0, 0)) (0) == 1;])],
+		   [ac_cv_type_signal=int],
+		   [ac_cv_type_signal=void])])
+AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
+		    ('int' or 'void').])
+
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(gethostname socket strdup strstr)
 
@@ -72,4 +92,5 @@ fi
 enableval=""
 AC_SUBST(SRCS)
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
