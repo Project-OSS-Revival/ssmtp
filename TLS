@@ -26,9 +26,17 @@ Set this to yes to make ssmtp identify itself with a certificate.
 TLSCert=<file>
 Specify which certificate file should be used.
 
+TLS_CA_File=<file>
+Optional file of trusted certificates for validating the server.
 
-TODO:
-* Check server certificate for changes and notify about it.
-* Diffrent Certificate and Key file?
+TLS_CA_Dir=<file>
+Optional directory of trusted certificates for validating the server.
 
+VerifyPeer=YES/NO
+Set this to yes to make ssmtp to verify peer(server) certificate.
 
+VerifyPeerName=YES/NO
+Set this to yes to make ssmtp to verify peer(server) hostname.
+
+AllowSelfSigned=YES/NO
+Set this to yes to make ssmtp to allow self signed certificates.
