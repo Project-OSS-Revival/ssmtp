@@ -31,6 +31,7 @@
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/x509v3.h>
 #endif
 #ifdef MD5AUTH
 #include "md5auth/hmac_md5.h"
@@ -52,6 +53,9 @@ bool_t use_tls = False;			/* Use SSL to transfer mail to HUB */
 bool_t use_starttls = False;		/* SSL only after STARTTLS (RFC2487) */
 bool_t use_cert = False;		/* Use a certificate to transfer SSL mail */
 bool_t use_oldauth = False;		/* use old AUTH LOGIN username style */
+bool_t verify_peer = True;		/* Verify peer certificate. */
+bool_t verify_peer_name = True;	/* Verify hostname in the certificate match server connected */
+bool_t allow_self_signed = True;	/* Accept self signed certificates. */
 
 #define ARPADATE_LENGTH 32		/* Current date in RFC format */
 char arpadate[ARPADATE_LENGTH];
@@ -68,6 +72,9 @@ char *gecos;
 char *prog = NULL;
 char *root = NULL;
 char *tls_cert = "/etc/ssl/certs/ssmtp.pem";	/* Default Certificate */
+char *tls_key = "/etc/ssl/certs/ssmtp.pem";	/* Default Private Key */
+char *tls_ca_file = NULL;			/* Trusted Certificate file */
+char *tls_ca_dir = NULL;			/* Trusted Certificate directory */
 char *uad = NULL;
 char *config_file = NULL;		/* alternate configuration file */
 
@@ -1014,6 +1021,45 @@ bool_t read_config()
 						"Set UseSTARTTLS=\"%s\"\n", use_tls ? "True" : "False");
 				}
 			}
+			else if(strcasecmp(p, "VerifyPeer") == 0) {
+				if(strcasecmp(q, "YES") == 0) {
+					verify_peer = True;
+				}
+				else {
+					verify_peer = False;
+				}
+
+				if(log_level > 0) {
+					log_event(LOG_INFO,
+						"Set VerifyPeer=\"%s\"\n", verify_peer ? "True" : "False");
+				}
+			}
+			else if(strcasecmp(p, "VerifyPeerName") == 0) {
+				if(strcasecmp(q, "YES") == 0) {
+					verify_peer_name = True;
+				}
+				else {
+					verify_peer_name = False;
+				}
+
+				if(log_level > 0) {
+					log_event(LOG_INFO,
+						"Set VerifyPeerName=\"%s\"\n", verify_peer_name ? "True" : "False");
+				}
+			}
+			else if(strcasecmp(p, "AllowSelfSigned") == 0) {
+				if(strcasecmp(q, "YES") == 0) {
+					allow_self_signed = True;
+				}
+				else {
+					allow_self_signed = False;
+				}
+
+				if(log_level > 0) {
+					log_event(LOG_INFO,
+						"Set AllowSelfSigned=\"%s\"\n", allow_self_signed ? "True" : "False");
+				}
+			}
 			else if(strcasecmp(p, "UseTLSCert") == 0) {
 				if(strcasecmp(q, "YES") == 0) {
 					use_cert = True;
@@ -1035,6 +1081,33 @@ bool_t read_config()
 
 				if(log_level > 0) {
 					log_event(LOG_INFO, "Set TLSCert=\"%s\"\n", tls_cert);
+				}
+			}
+			else if(strcasecmp(p, "TLSKey") == 0) {
+				if((tls_key = strdup(q)) == (char *)NULL) {
+								die("parse_config() -- strdup() failed");
+				}
+
+				if(log_level > 0) {
+								log_event(LOG_INFO, "Set TLSKey=\"%s\"\n", tls_key);
+				}
+			}
+			else if(strcasecmp(p, "TLS_CA_File") == 0) {
+				if((tls_ca_file = strdup(q)) == (char *)NULL) {
+								die("parse_config() -- strdup() failed");
+				}
+
+				if(log_level > 0) {
+								log_event(LOG_INFO, "Set TLS_CA_File=\"%s\"\n", tls_ca_file);
+				}
+			}
+			else if(strcasecmp(p, "TLS_CA_Dir") == 0) {
+				if((tls_ca_dir = strdup(q)) == (char *)NULL) {
+								die("parse_config() -- strdup() failed");
+				}
+
+				if(log_level > 0) {
+								log_event(LOG_INFO, "Set TLS_CA_Dir=\"%s\"\n", tls_ca_dir);
 				}
 			}
 #endif
@@ -1129,27 +1202,64 @@ int smtp_open(char *host, int port)
 
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
-	meth=SSLv23_client_method();
+	meth=TLS_client_method();
 	ctx = SSL_CTX_new(meth);
 	if(!ctx) {
 		log_event(LOG_ERR, "No SSL support initiated\n");
+		SSL_CTX_free(ctx);
 		return(-1);
 	}
 
 	if(use_cert == True) { 
 		if(SSL_CTX_use_certificate_chain_file(ctx, tls_cert) <= 0) {
 			perror("Use certfile");
+			SSL_CTX_free(ctx);
 			return(-1);
 		}
 
-		if(SSL_CTX_use_PrivateKey_file(ctx, tls_cert, SSL_FILETYPE_PEM) <= 0) {
+		if(SSL_CTX_use_PrivateKey_file(ctx, tls_key, SSL_FILETYPE_PEM) <= 0) {
 			perror("Use PrivateKey");
+			SSL_CTX_free(ctx);
 			return(-1);
 		}
 
 		if(!SSL_CTX_check_private_key(ctx)) {
 			log_event(LOG_ERR, "Private key does not match the certificate public key\n");
+			SSL_CTX_free(ctx);
 			return(-1);
+		}
+	}
+
+	if (verify_peer == True) {
+		long lerr;
+		unsigned long ulerr;
+
+		if(log_level > 0) {
+			log_event(LOG_INFO, "verifying  peer");
+		}
+		if (tls_ca_file != NULL  || tls_ca_dir != NULL) {
+			if(!SSL_CTX_load_verify_locations(ctx, tls_ca_file, tls_ca_dir)) {
+				ulerr = ERR_get_error();
+				log_event(LOG_ERR, "Error setting verify location: %s",
+						ERR_reason_error_string(ulerr));
+				SSL_CTX_free(ctx);
+				return(-1);
+			}
+		}
+		else {
+			if (SSL_CTX_set_default_verify_paths(ctx) != 1) {
+				ulerr = ERR_get_error();
+				log_event(LOG_ERR, "Error setting default verify location: %s",
+					ERR_reason_error_string(ulerr));
+				SSL_CTX_free(ctx);
+				return(-1);
+			}
+			if(log_level > 0) {
+				log_event(LOG_INFO, "set default verify path");
+			}
+		}
+		if (allow_self_signed == False) {
+			SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
 		}
 	}
 #endif
@@ -1163,7 +1273,7 @@ int smtp_open(char *host, int port)
 	/* Check we can reach the host */
 	if (getaddrinfo(host, servname, &hints, &ai0)) {
 		log_event(LOG_ERR, "Unable to locate %s", host);
-		return(-1);
+		goto tcp_err;
 	}
 
 	for (ai = ai0; ai; ai = ai->ai_next) {
@@ -1183,31 +1293,31 @@ int smtp_open(char *host, int port)
 	if(s < 0) {
 		log_event (LOG_ERR,
 			"Unable to connect to \"%s\" port %d.\n", host, port);
-
-		return(-1);
+		goto tcp_err;
 	}
+	goto tcp_ok;
 #else
 	/* Check we can reach the host */
 	if((hent = gethostbyname(host)) == (struct hostent *)NULL) {
 		log_event(LOG_ERR, "Unable to locate %s", host);
-		return(-1);
+		goto tcp_err;
 	}
 
 	if(hent->h_length > sizeof(hent->h_addr)) {
 		log_event(LOG_ERR, "Buffer overflow in gethostbyname()");
-		return(-1);
+		goto tcp_err;
 	}
 
 	/* Create a socket for the connection */
 	if((s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		log_event(LOG_ERR, "Unable to create a socket");
-		return(-1);
+		goto tcp_err;
 	}
 
 	for (i = 0; ; ++i) {
 		if (!hent->h_addr_list[i]) {
 			log_event(LOG_ERR, "Unable to connect to %s:%d", host, port);
-			return(-1);
+			goto tcp_err;
 		}
 
 	/* This SHOULD already be in Network Byte Order from gethostbyname() */
@@ -1220,10 +1330,17 @@ int smtp_open(char *host, int port)
 		continue;
 	break;
 	}
+	goto tcp_ok;
 #endif
-
+	tcp_err:
+#ifdef HAVE_SSL
+	SSL_CTX_free(ctx);
+#endif
+	return(-1);
+	tcp_ok:
 #ifdef HAVE_SSL
 	if(use_tls == True) {
+		long status;
 		log_event(LOG_INFO, "Creating SSL connection to host");
 
 		if (use_starttls == True)
@@ -1237,6 +1354,7 @@ int smtp_open(char *host, int port)
 					smtp_write(s, "STARTTLS"); /* assume STARTTLS regardless */
 					if (!smtp_okay(s, buf)) {
 						log_event(LOG_ERR, "STARTTLS not working");
+						SSL_CTX_free(ctx);
 						return(-1);
 					}
 				}
@@ -1248,6 +1366,7 @@ int smtp_open(char *host, int port)
 			else
 			{
 				log_event(LOG_ERR, "Invalid response SMTP Server (STARTTLS)");
+				SSL_CTX_free(ctx);
 				return(-1);
 			}
 			use_tls=True; /* now continue as normal for SSL */
@@ -1256,13 +1375,27 @@ int smtp_open(char *host, int port)
 		ssl = SSL_new(ctx);
 		if(!ssl) {
 			log_event(LOG_ERR, "SSL not working");
+			SSL_free(ssl);
+			SSL_CTX_free(ctx);
 			return(-1);
 		}
-		SSL_set_fd(ssl, s);
 
+		if (verify_peer == True && verify_peer_name == True) {
+			SSL_set_hostflags(ssl, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+			if (!SSL_set1_host(ssl, host)) {
+				log_event(LOG_ERR, "Unable to set peer host name");
+				SSL_free(ssl);
+				SSL_CTX_free(ctx);
+				return(-1);
+			}
+		}
+
+		SSL_set_fd(ssl, s);
 		err = SSL_connect(ssl);
 		if(err < 0) { 
 			perror("SSL_connect");
+			SSL_free(ssl);
+			SSL_CTX_free(ctx);
 			return(-1);
 		}
 
@@ -1273,11 +1406,37 @@ int smtp_open(char *host, int port)
 
 		server_cert = SSL_get_peer_certificate(ssl);
 		if(!server_cert) {
+			SSL_free(ssl);
+			SSL_CTX_free(ctx);
 			return(-1);
 		}
-		X509_free(server_cert);
 
-		/* TODO: Check server cert if changed! */
+		if (verify_peer == True) {
+			status = SSL_get_verify_result(ssl);
+			if(log_level > 0) {
+				log_event(LOG_INFO,"%d %s", status, X509_verify_cert_error_string(status) );
+			}
+			if (status != X509_V_OK) {
+				if (allow_self_signed == True
+						&& status != X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY
+						&& status != X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT
+						&& status != X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN) {
+					log_event(LOG_ERR, "%d %s", status, X509_verify_cert_error_string(status));
+					X509_free(server_cert);
+					SSL_free(ssl);
+					SSL_CTX_free(ctx);
+					return(-1);
+				}
+				else if (allow_self_signed == False) {
+					log_event(LOG_ERR, "%d %s", status, X509_verify_cert_error_string(status));
+					X509_free(server_cert);
+					SSL_free(ssl);
+					SSL_CTX_free(ctx);
+					return(-1);
+				}
+			}
+		}
+		X509_free(server_cert);
 	}
 #endif
 
