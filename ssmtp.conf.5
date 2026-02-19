@@ -1,10 +1,10 @@
-.\"/* Copyright 2004 Reuben Thomas
+.\"/* Copyright 2004 Reuben Thomas, 2026 Syed Shahrukh Hussain
 .\" * All rights reserved
 .\" *
 .\" This man page is distributed under the GNU General Public License
 .\" version 2, or at your option, any later version. There is no warranty.
 .\"
-.Dd October 7, 2004
+.Dd Feb 19, 2026
 .Dt SSMTP.CONF 5
 .Os
 .Sh NAME
@@ -53,6 +53,22 @@ See RFC 2487.
 .Pp
 .It Cm TLSCert
 The file name of an RSA certificate to use for TLS, if required.
+.It Cm TLSKey
+The file name of an RSA key to use for TLS, if required.
+.It Cm TLS_CA_File
+A file of trusted certificates for validating the server, if required.
+.Pp
+.It Cm TLS_CA_Dir
+A directory of trusted certificates for validating the server, if required.
+.Pp
+.It VerifyPeer
+Specifies whether ssmtp to verify peer(server) certificate.
+.Pp
+.It VerifyPeerName
+Specifies whether ssmtp to verify peer(server) hostname.
+.Pp
+.It AllowSelfSigned
+Specifies whether ssmtp to allow self signed certificates.
 .Pp
 .It Cm AuthUser
 The user name to use for SMTP AUTH.
@@ -77,6 +93,5 @@ Contains configuration data for
 .Sh SEE ALSO
 .Xr ssmtp 8
 .Sh AUTHORS
-Matt Ryan (mryan@debian.org), Hugo Haas (hugo@debian.org), Christoph Lameter (clameter@debian.org)
-and Dave Collier-Brown (davecb@hobbes.ss.org).
+Matt Ryan (mryan@debian.org), Hugo Haas (hugo@debian.org), Christoph Lameter (clameter@debian.org), Dave Collier-Brown (davecb@hobbes.ss.org) and Syed Shahrukh Hussain (syed.shahrukh@ossrevival.org).
 Reuben Thomas (rrt@sc3d.org) wrote the man page.
