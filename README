@@ -46,8 +46,11 @@ TLS support from Tobias Rundstrom <tobi@tobi.nu>
 IPv6 support from Jun-ya Kato <kato@goto.info.waseda.ac.jp>
 MD5 authentication support from TAKIZAWA Takashi <aki@luna.email.ne.jp>
 
-Current Maintainer:
+Previous Maintainer:
  Anibal Monsalve Salazar, A.Monsalve.Salazar@IEEE.org
+
+Current Maintainer:
+ Syed Shahrukh Hussain, syed.shahrukh@ossrevival.org
 
 Patchlevel:
  See ssmtp.c
