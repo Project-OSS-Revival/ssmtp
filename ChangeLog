@@ -1,3 +1,14 @@
+2026-02-21 Syed Shahrukh Hussain <syed.shahrukh@ossrevival.org>
+  - Add support for trust certificate file and directory.
+  - Add support for certificate verification.
+  - Config option to set trust certificate file and directory.
+  - Config option to enable/disable [default:YES] certificate and hostname verification.
+  - Config option to enable/disable [default:YES] self signed certificate.
+  - Fix SSL context and object release on failure.
+  - Fix AuthPass parsing to accept '=' or ':'.
+  - Reset header buffer to avoid invalid data in message.
+  - Add (and ignore) -B option.
+
 2025-09-24  Syed Shahrukh Hussain <syed.shahrukh@ossrevival.org>
 
   - Update to current autoconf.
