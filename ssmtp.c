@@ -778,6 +778,7 @@ void header_parse(FILE *stream)
 			if(p == (char *)NULL) {
 				die("header_parse() -- realloc() failed");
 			}
+			memset(p, 0, (size * sizeof(char)));
 			q = (p + len);
 		}
 		len++;
