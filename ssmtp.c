@@ -10,7 +10,7 @@
  See COPYRIGHT for the license
 
 */
-#define VERSION "2.65"
+#define VERSION "2.66"
 #define _GNU_SOURCE
 
 #include <sys/socket.h>
