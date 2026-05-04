@@ -1,5 +1,5 @@
 ## Description
-<!-- Briefly describe the change and its purpose -->
+<!-- Briefly describe the change and its purpose. If the change does not relates to a Github issue please provide step to reproduce the issue which PR fixes if required. -->
 
 ## Related Ticket
 <!-- Link to GitHub issue (e.g., Fixes #123) -->
